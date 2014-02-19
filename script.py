@@ -34,6 +34,8 @@ conn = sqlite3.connect('TROVE.db')
 c = conn.cursor()
 c.execute('''CREATE TABLE Patients
              (Name text, DOB text, Gender text, MRN int)''')
+c.execute('''CREATE TABLE Exams
+             (Modality text, Exam time text, ID int, Report time text)''')
 
 """
 def createData():
@@ -72,29 +74,42 @@ def createData():
 
 createData() """
 
+
+# Exam class
 class Exam:
-	def __init(self, Patient)__:
+	def __init__(self, Patient, Resident, Attending):
+		""" The exam class contains the variables for modality, date and time, ID, and report date and time. """
 		faker = Factory.create()
 		self.examMod = ''
 		self.randExam = random.randint(1, 4)
-		if randExam is 1:
+		if self.randExam is 1:
 			self.examMod = 'CT'
-		elif randExam is 2:
+		elif self.randExam is 2:
 			self.examMod = 'MR'
-		elif randExam is 3:
+		elif self.randExam is 3:
 			self.examMod = 'XR'
 		else:
 			self.examMod = 'US'
+
 		self.examDateTime = str(faker.date_time())
+		# need to check the DOB of the Patient so that the DOB < examDateTime
 		while int(self.examDateTime[:self.examDateTime.index('-')])<int(Patient.DOB()[:Patient.DOB().index('-')]):
 			self.examDateTime = str(faker.date_time())
 		self.examID = str(random.randint(0,99999999)).zfill(8)
-		self.examReportDateTime = str(faker.date_time())
-		while int(self.examReportDateTime[:self.examReportDateTime.index('-')])<int(self.examDateTime[:self.examDateTime.index('-')]):
-			self.examReportDateTime = str(faker.date_time())
+		self.randReport = random.randint(1, 6)
+		self.examReportDateTimeNum = int(self.examDateTime[self.examDateTime.find(' ')+1:self.examDateTime.find(':')])+self.randReport
+		self.examReportDateTime = self.examDateTime[:self.examDateTime.find(' ')+1] + str(self.examReportDateTimeNum) + self.examDateTime[self.examDateTime.find(':'):]
+		self.examResident = Resident
+		self.examAttending = Attending
+		Patient.addExam(self)
+		Resident.addExam(self)
+		Attending.addExam(self)
+		c = conn.cursor()
+		c.execute("INSERT INTO Exams VALUES ('self.examMod', 'self.examdDateTime', 'self.examID', 'self.examReportDateTime')")
+		conn.commit()
 		
 	def toString(self):
-		return 'Exam Modality: '+self.examMod+'\nExam Date/Time: '+examDateTime+'\nExam ID: '+examID+'\nExam report: '+examReportDateTime
+		return 'Exam Modality: '+self.examMod+'\nExam Date/Time: '+self.examDateTime+'\nExam ID: '+self.examID+'\nExam report: '+self.examReportDateTime
 
 	def Modality(self):
 		return self.examMod
@@ -106,20 +121,19 @@ class Exam:
 		return self.examReportDateTime
 
 class Patient():
-	def __init(self)__:
+	def __init__(self):
 		faker = Factory.create()
 		self.patientName = faker.first_name() + ' ' + faker.last_name()
 		self.patientDOB = faker.date()
 		self.genderInt = random.randint(1, 10)
-		self.patientGender = 'M' if genderInt <= 5 else 'F'
+		self.patientGender = 'M' if self.genderInt <= 5 else 'F'
 		self.randMRN = str(random.randint(0, 99999999))
-		self.MRN = randMRN.zfill(8)
+		self.MRN = self.randMRN.zfill(8)
 		self.patientExams = []
 		c = conn.cursor()
-		c.execute("INSERT INTO Patients VALUES (self.patienName, self.patientDOB, self.patientGender, self.MRN)")
+		c.execute("INSERT INTO Patients (Name, DOB, Gender, MRN) VALUES ('self.patientName', 'self.patientDOB', 'self.patientGender', 'self.MRN')")
 		conn.commit()
-		conn.close()
-
+		
 	def toString(self):
 		return 'Name: '+self.patientName+'\nDOB: '+self.patientDOB+'\nGender: '+self.patientGender+'\nMRN: '+self.MRN
 
@@ -135,8 +149,30 @@ class Patient():
 	def MRN(self):
 		return self.MRN
 
+	def addExam(self, exam):
+		self.patientExams.append(exam)
+
+class Resident:
+
+	def __init__(self):
+		self.Exams = []
+
+	def addExam(self, exam):
+		self.Exams.append(exam)
+
+class Attending:
+
+	def __init__(self):
+		self.Exams = []
+
+	def addExam(self, exam):
+		self.Exams.append(exam)
 
 
-c.execute("INSERT INTO Patients VALUES ('2006-01-05','BUY','RHAT',100,35.14)")
-conn.commit()
-conn.close()
+
+for x in range(1, 10000):
+	p = Patient()
+	r = Resident()
+	a = Attending()
+	e = Exam(p, r, a)
+	print e.toString()
